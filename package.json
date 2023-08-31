@@ -1,0 +1,49 @@
+{
+  "name": "homebridge-electromagnetic-lock",
+  "version": "1.0.0",
+  "description": "Homebridge plugin to control electromagnetic lock via Raspberry Pi GPIO pins",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/adrianmihai83/homebridge-electromagnetic-lock"
+  },
+  "keywords": [
+    "homebridge-plugin",
+    "homebridge",
+    "raspberry",
+    "gpio",
+    "lock",
+    "lock-mechanism",
+    "electromagnetic-lock",
+    "homekit"
+  ],
+  "scripts": {
+    "OH stop": "sudo hb-service stop",
+    "link": "npm link",
+    "OH start": "sudo hb-service start",
+    "watch": "npm link && nodemon"
+  },
+  "engines": {
+    "homebridge": ">=1.2.3"
+  },
+  "files": [
+    "Changelog.md",
+    "LICENSE.md",
+    "README.md",
+    "config.schema.json",
+    "dist"
+  ],
+  "main": "index.js",
+  "dependencies": {
+    "node-persist": "^2.1.0",
+    "nodemon": "^3.0.1",
+    "rpi-gpio": "^2.1.7",
+    "underscore": "^1.13.6"
+  },
+  "maintainers": [
+    {
+      "name": "adrianmihai83",
+      "email": "adrianmihai83@gmail.com"
+    }
+  ]
+}
