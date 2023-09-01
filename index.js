@@ -54,8 +54,8 @@ function ElectromagneticLockAccessory(log, config) {
 
   this.unlockTimeout;
 
-  //GPIO.MODE_RPI;
-  //GPIO.setup(this.lockPin, this.activeLow ? GPIO.DIR_HIGH : GPIO.DIR_LOW);
+  GPIO.MODE_RPI;
+  GPIO.setup(this.lockPin, this.activeLow ? GPIO.DIR_HIGH : GPIO.DIR_LOW);
   //this.log("pin setup complete");
 
   this.service.getCharacteristic(Characteristic.LockCurrentState).on("get", this.getCurrentState.bind(this));
@@ -80,7 +80,7 @@ ElectromagneticLockAccessory.prototype.setTargetState = function (state, callbac
     callback();
   } else {
     this.log("Setting " + this.name + " to %s", state ? "STATE_SECURED" : "STATE_UNSECURED");
-    //GPIO.write(this.lockPin, this.activeLow ? DIR_LOW : DIR_HIGH);
+    GPIO.write(this.lockPin, this.activeLow ? DIR_LOW : DIR_HIGH);
     //this.log("Setting lockPin " + this.lockPin + " to state %s", this.activeLow ? "DIR_LOW" : "DIR_HIGH");
     this.service.setCharacteristic(Characteristic.LockCurrentState, state);
     this.lockState = state;
@@ -92,7 +92,7 @@ ElectromagneticLockAccessory.prototype.setTargetState = function (state, callbac
 
 ElectromagneticLockAccessory.prototype.secureLock = function () {
   this.log("Setting " + this.name + " to STATE_SECURED");
-  //GPIO.write(this.lockPin, this.activeLow ? DIR_HIGH : DIR_LOW);
+  GPIO.write(this.lockPin, this.activeLow ? DIR_HIGH : DIR_LOW);
   //this.log("Setting lockPin " + this.lockPin + " to state %s", this.activeLow ? "DIR_HIGH" : "DIR_LOW");
   this.service.updateCharacteristic(Characteristic.LockTargetState, STATE_SECURED);
   this.service.updateCharacteristic(Characteristic.LockCurrentState, STATE_SECURED);
