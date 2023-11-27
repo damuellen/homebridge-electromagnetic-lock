@@ -4,10 +4,10 @@ var Service, Characteristic, HomebridgeAPI;
 
 var GPIO = require("rpi-gpio");
 
-const STATE_UNSECURED = 0;
-const STATE_SECURED = 1;
-const STATE_JAMMED = 2;
-const STATE_UNKNOWN = 3;
+const _UNSECURED = 0;
+const _SECURED = 1;
+const _JAMMED = 2;
+const _UNKNOWN = 3;
 
 module.exports = function (homebridge) {
   Service = homebridge.hap.Service;
@@ -18,13 +18,15 @@ module.exports = function (homebridge) {
 };
 
 function ElectromagneticLockAccessory(log, config) {
-  _.defaults(config, { activeLow: true, unlockingDuration: 2 });
+  _.defaults(config, { activeLow: true, unlockingDuration: 40 , pollingInterval: 2 });
 
   this.log = log;
   this.name = config["name"];
   this.lockPin = config["lockPin"];
+  this.doorPin = config['doorPin'];
   this.activeLow = config["activeLow"];
   this.unlockingDuration = config["unlockingDuration"];
+  this.pollingInterval = config["pollingInterval"];
 
   this.cacheDirectory = HomebridgeAPI.user.persistPath();
   this.storage = require("node-persist");
@@ -32,14 +34,14 @@ function ElectromagneticLockAccessory(log, config) {
 
   var cachedCurrentState = this.storage.getItemSync(this.name);
   if (cachedCurrentState === undefined || cachedCurrentState === false) {
-    this.currentState = STATE_UNKNOWN;
+    this.currentState = _UNKNOWN;
   } else {
     this.currentState = cachedCurrentState;
   }
 
   this.lockState = this.currentState;
-  if (this.currentState == STATE_UNKNOWN) {
-    this.targetState = STATE_SECURED;
+  if (this.currentState == _UNKNOWN) {
+    this.targetState = _SECURED;
   } else {
     this.targetState = this.currentState;
   }
@@ -48,14 +50,17 @@ function ElectromagneticLockAccessory(log, config) {
 
   this.infoService = new Service.AccessoryInformation();
   this.infoService
-    .setCharacteristic(Characteristic.Manufacturer, "Adrian Mihai")
-    .setCharacteristic(Characteristic.Model, "RaspberryPi GPIO Electromagnetic Lock")
-    .setCharacteristic(Characteristic.SerialNumber, "Version 1.0.0");
+    .setCharacteristic(Characteristic.Manufacturer, "Müllenborn")
+    .setCharacteristic(Characteristic.Model, "RaspberryPi GPIO Electromagnetic lock with reed switch")
+    .setCharacteristic(Characteristic.SerialNumber, "Version 0.1.0");
 
   this.unlockTimeout;
-
+  this.jammedTimeout;
+  this.openTimeout;
+ 
   GPIO.MODE_RPI;
   GPIO.setup(this.lockPin, this.activeLow ? GPIO.DIR_HIGH : GPIO.DIR_LOW);
+  GPIO.setup(this.doorPin, GPIO.DIR_IN)
   //this.log("pin setup complete");
 
   this.service.getCharacteristic(Characteristic.LockCurrentState).on("get", this.getCurrentState.bind(this));
@@ -75,25 +80,67 @@ ElectromagneticLockAccessory.prototype.getTargetState = function (callback) {
 
 ElectromagneticLockAccessory.prototype.setTargetState = function (state, callback) {
   if (state) {
-    clearTimeout(this.unlockTimeout);
-    this.secureLock();
+    clearInterval(this.unlockTimeout);
+    clearTimeout(this.jammedTimeout);
+    this.secureLock();    
     callback();
   } else {
     this.log("Setting " + this.name + " to %s", state ? "STATE_SECURED" : "STATE_UNSECURED");
-    GPIO.write(this.lockPin, this.activeLow ? false : true);
+    GPIO.write(this.lockPin, this.activeLow ? false : true); // Open
     //this.log("Setting lockPin " + this.lockPin + " to state %s", this.activeLow ? "LOW" : "HIGH");
     this.service.setCharacteristic(Characteristic.LockCurrentState, state);
     this.lockState = state;
     this.storage.setItemSync(this.name, this.lockState);
-    this.unlockTimeout = setTimeout(this.secureLock.bind(this), this.unlockingDuration * 1000);
+    this.unlockTimeout = setInterval(this.unsecuredLock.bind(this), this.pollingInterval * 1000);
+    this.jammedTimeout = setTimeout(this.jammedLock.bind(this), this.unlockingDuration * 1000);
     callback();
   }
+};
+
+ElectromagneticLockAccessory.prototype.jammedLock = function () {
+  GPIO.read(this.doorPin, function(err, value) {
+    if (err) throw err;
+    if (value) {
+      if (this.currentState == _UNSECURED) {
+        this.service.updateCharacteristic(Characteristic.LockCurrentState, _JAMMED);
+        this.currentState = _JAMMED;
+        this.storage.setItemSync(this.name, this.currentState);
+      }
+    }
+  });
+};
+
+ElectromagneticLockAccessory.prototype.unsecuredLock = function () {
+  GPIO.read(this.doorPin, function(err, value) {
+    if (err) throw err;
+    if (value) {
+      if (this.currentState == _UNKNOWN) {
+        this.service.updateCharacteristic(Characteristic.LockTargetState, _SECURED);
+        this.service.updateCharacteristic(Characteristic.LockCurrentState, _SECURED);
+        this.targetState = _SECURED;
+        this.currentState = _SECURED;
+      } 
+      if (this.currentState == _SECURED) {
+        clearInterval(this.unlockTimeout);
+        clearTimeout(this.jammedTimeout);
+      }
+    } else {
+      if (this.currentState == _UNSECURED) {
+        GPIO.write(this.lockPin, this.activeLow ? true : false); // Close
+        this.service.updateCharacteristic(Characteristic.LockTargetState, _SECURED);
+        this.service.updateCharacteristic(Characteristic.LockCurrentState, _UNKNOWN);
+        this.targetState = _SECURED;
+        this.currentState = _UNKNOWN;
+        clearTimeout(this.jammedTimeout);
+      }
+    }
+    this.storage.setItemSync(this.name, this.currentState);
+  });
 };
 
 ElectromagneticLockAccessory.prototype.secureLock = function () {
   this.log("Setting " + this.name + " to STATE_SECURED");
   GPIO.write(this.lockPin, this.activeLow ? true : false);
-  //this.log("Setting lockPin " + this.lockPin + " to state %s", this.activeLow ? "HIGH" : "LOW");
   this.service.updateCharacteristic(Characteristic.LockTargetState, STATE_SECURED);
   this.service.updateCharacteristic(Characteristic.LockCurrentState, STATE_SECURED);
   this.currentState = STATE_SECURED;
