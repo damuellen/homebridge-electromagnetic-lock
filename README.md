@@ -1,45 +1,50 @@
-# Homebridge GPIO Electromagnetic Lock
+# homebridge-electromagnetic-lock
 
-Homebridge plugin to control electromagnetic lock via Raspberry Pi GPIO pins.
-
-## Objective
-
-Electromagnetic lock working with wiringpi
+This Homebridge plugin allows you to control an electromagnetic lock connected to a Raspberry Pi GPIO pin. The plugin monitors the lock and door status, providing secure and convenient control through HomeKit.
 
 ## Installation
 
-1. install homebridge
-   `npm install -g homebridge`
-2. install this plugin
-   `npm install -g homebridge-wiringpi-electromagnetic-lock`
-3. update your `~/.homebridge/config.json` file (use `sample-config.json` as a reference)
+1. Install Homebridge using `npm install -g homebridge`
+2. Install this plugin using `npm install -g homebridge-electromagnetic-lock-with-reed-switch`
+3. Update your Homebridge configuration file to include the `ElectromagneticLock` accessory. See the example below.
 
 ## Configuration
 
-Sample accessory:
+Add the following information to your Homebridge `config.json` file:
 
-```
+```json
 "accessories": [
   {
     "accessory": "ElectromagneticLock",
-    "name": "Lock",
-    "lockPin": 5,
+    "name": "Türsummer",
+    "lockPin": 37,
+    "doorPin": 4,
     "activeLow": true,
-    "unlockingDuration": 2
+    "unlockingDuration": 40,
+    "pollingInterval": 2
   }
 ]
 ```
 
-Fields:
+- **name**: The name of the accessory as it will appear in HomeKit.
+- **lockPin**: The GPIO pin connected to the electromagnetic lock.
+- **doorPin**: The GPIO pin connected to the reed switch on the door.
+- **activeLow**: Set to `true` if the GPIO pin operates with active low logic.
+- **unlockingDuration**: The duration, in seconds, for which the lock remains unlocked.
+- **pollingInterval**: The interval, in seconds, at which the plugin checks the door status.
 
-- `accessory` must always be _ElectromagneticLock_
-- `name` accessory name, e.g. _Lock_
-- `lockPin` pin for unlocking lock (use _gBCM numbering_, run _gpio readall_)
-- `activeLow` [optional, default: *true*] true: relay activated by low state (0), false: relay activated by high state (1), affects _lockPin_
-- `unlockingDuration` [optional, default: *2*] how long _lockPin_ should be active (seconds)
+## Usage
 
-## Troubleshooting
+Once configured, the electromagnetic lock accessory will appear in your HomeKit app. You can control and monitor the lock's state, and the plugin will handle the unlocking and jammed scenarios based on the door status.
 
-- check platform: [Homebridge](https://github.com/nfarina/homebridge)
-- check plugin dependency: [underscore](Install: npm install underscore -> https://www.npmjs.com/package/underscore)
-- check plugin dependency: [rpi-gpio](Install: np install rpi-gpio -> https://www.npmjs.com/package/rpi-gpio)
+## Accessory Information
+
+The accessory information, such as manufacturer, model, and serial number, is also provided for better identification in HomeKit.
+
+### Manufacturer: Müllenborn
+### Model: RaspberryPi GPIO Electromagnetic lock with reed switch
+### Serial Number: Version 0.1.1
+
+## Acknowledgments
+
+This plugin utilizes the [rpi-gpio](https://www.npmjs.com/package/rpi-gpio) and [node-persist](https://www.npmjs.com/package/node-persist) packages to interface with the Raspberry Pi GPIO and persist data, respectively.
