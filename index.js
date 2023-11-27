@@ -18,7 +18,7 @@ module.exports = function (homebridge) {
 };
 
 function ElectromagneticLockAccessory(log, config) {
-  _.defaults(config, { activeLow: true, unlockingDuration: 40 , pollingInterval: 2 });
+  _.defaults(config, { lockPin: 37, doorPin: 4, activeLow: true, unlockingDuration: 40 , pollingInterval: 2 });
 
   this.log = log;
   this.name = config["name"];
@@ -52,7 +52,7 @@ function ElectromagneticLockAccessory(log, config) {
   this.infoService
     .setCharacteristic(Characteristic.Manufacturer, "Müllenborn")
     .setCharacteristic(Characteristic.Model, "RaspberryPi GPIO Electromagnetic lock with reed switch")
-    .setCharacteristic(Characteristic.SerialNumber, "Version 0.1.0");
+    .setCharacteristic(Characteristic.SerialNumber, "Version 0.1.1");
 
   this.unlockTimeout;
   this.jammedTimeout;

@@ -18,6 +18,12 @@
         "required": true,
         "description": "pin for unlocking lock (use Rpi numbering)"
       },
+      "doorPin": {
+        "title": "Reed switch GPIO pin",
+        "type": "integer",
+        "required": true,
+        "description": "pin for reed switch (use Rpi numbering)"
+      },
       "activeLow": {
         "title": "Relay activated by low state?",
         "type": "boolean",
@@ -28,7 +34,13 @@
         "title": "Unlocking duration (seconds)",
         "type": "integer",
         "default": 2,
-        "description": "how long lockPin should be active (seconds), default: 2"
+        "description": "how long lockPin should be active (seconds), default: 40"
+      },
+      "pollingInterval": {
+        "title": "Polling interval (seconds)",
+        "type": "integer",
+        "default": 2,
+        "description": "how often to be polled (seconds), default: 2"
       }
     }
   }

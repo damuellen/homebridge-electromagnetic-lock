@@ -9,10 +9,12 @@
   "accessories": [
     {
       "accessory": "ElectromagneticLock",
-      "name": "Lock",
-      "lockPin": 6,
+      "name": "Türsummer",
+      "lockPin": 37,
+      "doorPin": 4,
       "activeLow": true,
-      "unlockingDuration": 2
+      "unlockingDuration": 40,
+      "pollingInterval": 2
     }
   ]
 }
