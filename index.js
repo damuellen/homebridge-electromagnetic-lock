@@ -102,6 +102,7 @@ ElectromagneticLockAccessory.prototype.jammedLock = function () {
     if (err) throw err;
     if (value) {
       if (this.currentState == _UNSECURED) {
+        GPIO.write(this.lockPin, this.activeLow ? true : false); // Close
         this.service.updateCharacteristic(Characteristic.LockCurrentState, _JAMMED);
         this.currentState = _JAMMED;
         this.storage.setItemSync(this.name, this.currentState);
@@ -114,7 +115,7 @@ ElectromagneticLockAccessory.prototype.unsecuredLock = function () {
   GPIO.read(this.doorPin, function(err, value) {
     if (err) throw err;
     if (value) {
-      if (this.currentState == _UNKNOWN) {
+      if (this.targetState == _SECURED) {
         this.service.updateCharacteristic(Characteristic.LockTargetState, _SECURED);
         this.service.updateCharacteristic(Characteristic.LockCurrentState, _SECURED);
         this.targetState = _SECURED;
@@ -128,9 +129,7 @@ ElectromagneticLockAccessory.prototype.unsecuredLock = function () {
       if (this.currentState == _UNSECURED) {
         GPIO.write(this.lockPin, this.activeLow ? true : false); // Close
         this.service.updateCharacteristic(Characteristic.LockTargetState, _SECURED);
-        this.service.updateCharacteristic(Characteristic.LockCurrentState, _UNKNOWN);
         this.targetState = _SECURED;
-        this.currentState = _UNKNOWN;
         clearTimeout(this.jammedTimeout);
       }
     }
