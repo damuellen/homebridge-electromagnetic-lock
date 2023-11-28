@@ -12,6 +12,12 @@
         "required": true,
         "description": "The name of the accessory, e.g., Lock."
       },
+      "doorName": {
+        "title": "Name",
+        "type": "string",
+        "required": true,
+        "description": "The name of the door contact, e.g., Lock."
+      },
       "lockPin": {
         "title": "Lock GPIO pin",
         "type": "integer",

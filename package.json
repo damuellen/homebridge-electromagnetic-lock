@@ -1,6 +1,6 @@
 {
   "name": "homebridge-electromagnetic-lock-with-reed-switch",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Homebridge plugin for controlling an electromagnetic lock via Raspberry Pi GPIO pins connected to a relay.",
   "license": "MIT",
   "repository": {
@@ -12,6 +12,10 @@
     "homebridge",
     "raspberry",
     "gpio",
+    "reed",
+    "switch",
+    "door",
+    "contact",
     "lock",
     "lock-mechanism",
     "electromagnetic-lock",

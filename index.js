@@ -25,7 +25,7 @@ function ElectromagneticLockAccessory(log, config) {
 
   this.log = log;
   this.name = config["name"];
-  this.doorName = "Haustür";
+  this.doorName = config["doorName"];
   this.lockPin = config["lockPin"];
   this.doorPin = config['doorPin'];
   this.activeLow = config["activeLow"];
@@ -44,7 +44,7 @@ function ElectromagneticLockAccessory(log, config) {
   }
   var cachedDoorState = this.storage.getItemSync(this.doorName);
   if (cachedDoorState === undefined || cachedDoorState === false) {
-    this.doorState = _NOT_DETECTED;
+    this.doorState = _DETECTED;
   } else {
     this.doorState = cachedDoorState;
   }
@@ -61,9 +61,9 @@ function ElectromagneticLockAccessory(log, config) {
 
   this.infoService = new Service.AccessoryInformation();
   this.infoService
-    .setCharacteristic(Characteristic.Manufacturer, "Müllenborn")
-    .setCharacteristic(Characteristic.Model, "RaspberryPi GPIO Electromagnetic lock with reed switch")
-    .setCharacteristic(Characteristic.SerialNumber, "Version 0.3.0");
+    .setCharacteristic(Characteristic.Manufacturer, "Quantum Ultra Lock Technologies")
+    .setCharacteristic(Characteristic.Model, "RaspberryPi GPIO Electromagnetic lock with door contact")
+    .setCharacteristic(Characteristic.SerialNumber, "Version 0.4.0");
 
   this.unlockTimeout;
   this.jammedTimeout;
@@ -74,6 +74,7 @@ function ElectromagneticLockAccessory(log, config) {
   GPIO.on('change', function(channel, value) {
     if (channel === this.doorPin) {
       this.doorState = value ? _DETECTED : _NOT_DETECTED;
+      clearTimeout(this.jammedTimeout);
       this.storage.setItemSync(this.doorName, this.doorState);
     }
   });
@@ -105,7 +106,6 @@ ElectromagneticLockAccessory.prototype.setTargetState = function (state, callbac
   this.log("Setting " + this.name + " to %s", state ? "SECURED" : "UNSECURED");
   if (state) {
     clearTimeout(this.unlockTimeout);
-    clearTimeout(this.jammedTimeout);
     this.secureLock();    
     callback();
   } else {

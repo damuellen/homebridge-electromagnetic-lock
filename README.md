@@ -16,7 +16,8 @@ Add the following information to your Homebridge `config.json` file:
 "accessories": [
   {
     "accessory": "ElectromagneticLock",
-    "name": "Türsummer",
+    "name": "Türöffner",
+    "doorName": "Haustür",
     "lockPin": 37,
     "doorPin": 4,
     "activeLow": true,
@@ -41,9 +42,9 @@ Once configured, the electromagnetic lock accessory will appear in your HomeKit 
 
 The accessory information, such as manufacturer, model, and serial number, is also provided for better identification in HomeKit.
 
-### Manufacturer: Müllenborn
-### Model: RaspberryPi GPIO Electromagnetic lock with reed switch
-### Serial Number: Version 0.1.1
+### Manufacturer: Quantum Ultra Lock Technologies
+### Model: RaspberryPi GPIO Electromagnetic lock with door contact
+### Serial Number: Version 0.4.0
 
 ## Acknowledgments
 

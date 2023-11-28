@@ -9,7 +9,8 @@
   "accessories": [
     {
       "accessory": "ElectromagneticLock",
-      "name": "Türsummer",
+      "name": "Türöffner",
+      "doorName": "Haustür",
       "lockPin": 37,
       "doorPin": 4,
       "activeLow": true,
