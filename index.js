@@ -44,7 +44,7 @@ function ElectromagneticLockAccessory(log, config) {
     .setCharacteristic(Characteristic.Manufacturer, "Quantum Ultra Lock Technologies")
     .setCharacteristic(Characteristic.Model, "RaspberryPi GPIO Electromagnetic lock with door contact")
     .setCharacteristic(Characteristic.SerialNumber, "694475915589468")
-    .setCharacteristic(Characteristic.FirmwareRevision, "0.5.0");
+    .setCharacteristic(Characteristic.FirmwareRevision, "0.5.1");
 
   this.lockService.getCharacteristic(Characteristic.LockCurrentState)
     .on("get", this.getCurrentState.bind(this));
@@ -84,7 +84,7 @@ function ElectromagneticLockAccessory(log, config) {
           // Update the lastUpdateTime to the current time
           this.doorTimeout = currentTime;
           this.doorService.updateCharacteristic(Characteristic.ContactSensorState, this.doorState);
-        } else if (currentTime - this.doorTimeout >= 500) {
+        } else if (currentTime - this.doorTimeout <= 500) {
           if (this.currentState != _SECURED) {
             this.currentState = _JAMMED
             this.lockService.updateCharacteristic(Characteristic.LockCurrentState, this.currentState);
