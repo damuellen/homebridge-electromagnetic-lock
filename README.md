@@ -26,8 +26,8 @@ Add the following information to your Homebridge `config.json` file:
   }
 ]
 ```
-
 - **name**: The name of the accessory as it will appear in HomeKit.
+- **doorName**: The name of the accessory as it will appear in HomeKit.
 - **lockPin**: The GPIO pin connected to the electromagnetic lock.
 - **doorPin**: The GPIO pin connected to the reed switch on the door.
 - **activeLow**: Set to `true` if the GPIO pin operates with active low logic.
@@ -40,12 +40,12 @@ Once configured, the electromagnetic lock accessory will appear in your HomeKit 
 
 ## Accessory Information
 
-The accessory information, such as manufacturer, model, and serial number, is also provided for better identification in HomeKit.
+The accessory information, such as manufacturer, model, and version, is also provided for better identification in HomeKit.
 
 ### Manufacturer: Quantum Ultra Lock Technologies
 ### Model: RaspberryPi GPIO Electromagnetic lock with door contact
-### Serial Number: Version 0.4.0
+### FirmwareRevision 0.5.0
 
 ## Acknowledgments
 
-This plugin utilizes the [rpi-gpio](https://www.npmjs.com/package/rpi-gpio) and [node-persist](https://www.npmjs.com/package/node-persist) packages to interface with the Raspberry Pi GPIO and persist data, respectively.
+This plugin utilizes the [rpi-gpio](https://www.npmjs.com/package/rpi-gpio) package to interface with the Raspberry Pi GPIO.

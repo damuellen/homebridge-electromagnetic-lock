@@ -39,7 +39,7 @@
       "unlockingDuration": {
         "title": "Unlocking duration (seconds)",
         "type": "integer",
-        "default": 2,
+        "default": 40,
         "description": "The duration for which the lockPin should be active in seconds (default: 2)."
       },
       "pollingInterval": {
