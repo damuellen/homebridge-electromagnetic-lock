@@ -57,7 +57,7 @@ class ElectromagneticLockAccessory {
       .setCharacteristic(Characteristic.Manufacturer, "Quantum Ultra Lock Technologies")
       .setCharacteristic(Characteristic.Model, "RaspberryPi GPIO Electromagnetic lock with door contact")
       .setCharacteristic(Characteristic.SerialNumber, "694475915589468")
-      .setCharacteristic(Characteristic.FirmwareRevision, "0.6.0");
+      .setCharacteristic(Characteristic.FirmwareRevision, "0.7.0");
   }
 
   setupLockService() {
@@ -93,15 +93,14 @@ class ElectromagneticLockAccessory {
   updateDoorState(newState) {
     const currentTime = Date.now();
 
-     if (currentTime - this.doorTimeout <= 500) {
+    if (currentTime - this.doorTimeout <= 500) {
       if (this.currentState != LockCurrentState.SECURED) {
         this.currentState = Characteristic.LockCurrentState.JAMMED;
         this.lockService.updateCharacteristic(Characteristic.LockCurrentState, this.currentState);
       }
-    } else {      
-      this.doorState = newState;
-      this.doorService.updateCharacteristic(Characteristic.ContactSensorState, newState);
     }
+    this.doorState = newState;
+    this.doorService.updateCharacteristic(Characteristic.ContactSensorState, newState);
     this.doorTimeout = currentTime;
     clearTimeout(this.jammedTimeout);
   }
@@ -125,7 +124,7 @@ class ElectromagneticLockAccessory {
     this.log("Setting %s to %s", this.name, state ? "SECURED" : "UNSECURED");
 
     if (state) {
-      clearTimeout(this.unlockTimeout);
+      clearInterval(this.unlockTimeout);
       this.secureLock();
     } else {
       this.unsecureLock();
