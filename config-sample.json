@@ -12,6 +12,7 @@
       "name": "Türöffner",
       "doorName": "Haustür",
       "lockPin": 37,
+      "buzzerPin": 38,
       "doorPin": 4,
       "activeLow": true,
       "unlockingDuration": 40,

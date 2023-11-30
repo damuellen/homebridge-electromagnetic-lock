@@ -19,6 +19,7 @@ Add the following information to your Homebridge `config.json` file:
     "name": "Türöffner",
     "doorName": "Haustür",
     "lockPin": 37,
+    "buzzerPin": 38,
     "doorPin": 4,
     "activeLow": true,
     "unlockingDuration": 40,
@@ -29,6 +30,7 @@ Add the following information to your Homebridge `config.json` file:
 - **name**: The name of the accessory as it will appear in HomeKit.
 - **doorName**: The name of the accessory as it will appear in HomeKit.
 - **lockPin**: The GPIO pin connected to the electromagnetic lock.
+- **buzzerPin**: The GPIO pin connected to the active buzzer.
 - **doorPin**: The GPIO pin connected to the reed switch on the door.
 - **activeLow**: Set to `true` if the GPIO pin operates with active low logic.
 - **unlockingDuration**: The duration, in seconds, for which the lock remains unlocked.
@@ -44,7 +46,7 @@ The accessory information, such as manufacturer, model, and version, is also pro
 
 ### Manufacturer: Quantum Ultra Lock Technologies
 ### Model: RaspberryPi GPIO Electromagnetic lock with door contact
-### FirmwareRevision 0.7.0
+### FirmwareRevision 0.8.0
 
 ## Acknowledgments
 
