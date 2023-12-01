@@ -46,7 +46,7 @@ The accessory information, such as manufacturer, model, and version, is also pro
 
 ### Manufacturer: Quantum Ultra Lock Technologies
 ### Model: RaspberryPi GPIO Electromagnetic lock with door contact
-### FirmwareRevision 0.8.0
+### FirmwareRevision 0.9.0
 
 ## Acknowledgments
 

@@ -10,6 +10,8 @@ const DEFAULT_CONFIG = {
   lockPin: 37,
   buzzerPin: 38,
   doorPin: 4,
+  tamperPin: 5,
+  tamperCheck: false,
   activeLow: true,
   unlockingDuration: 40,
   pollingInterval: 2,
@@ -25,6 +27,8 @@ class ElectromagneticLockAccessory {
     this.lockPin = config.lockPin;
     this.buzzerPin = config.buzzerPin;
     this.doorPin = config.doorPin;
+    this.tamperPin = config.tamperPin;
+    this.tamperCheck = config.tamperCheck;
     this.activeLow = config.activeLow;
     this.unlockingDuration = config.unlockingDuration;
     this.pollingInterval = config.pollingInterval;
@@ -45,14 +49,16 @@ class ElectromagneticLockAccessory {
     GPIO.setup(this.lockPin, this.activeLow ? GPIO.DIR_HIGH : GPIO.DIR_LOW);
     GPIO.setup(this.buzzerPin, this.activeLow ? GPIO.DIR_HIGH : GPIO.DIR_LOW);
     GPIO.setup(this.doorPin, GPIO.DIR_IN, GPIO.EDGE_BOTH);
-
+    if (this.tamperCheck) {
+      GPIO.setup(this.tamperPin, GPIO.DIR_IN, GPIO.EDGE_BOTH);
+    }
     GPIO.on('change', this.handleDoorStateChange.bind(this));
   }
 
   setupServices() {
-    this.setupAccessoryInformationService();
     this.setupLockService();
     this.setupDoorService();
+    this.setupAccessoryInformationService();
   }
 
   setupAccessoryInformationService() {
@@ -60,7 +66,7 @@ class ElectromagneticLockAccessory {
       .setCharacteristic(Characteristic.Manufacturer, "Quantum Ultra Lock Technologies")
       .setCharacteristic(Characteristic.Model, "RaspberryPi GPIO Electromagnetic lock with door contact")
       .setCharacteristic(Characteristic.SerialNumber, "694475915589468")
-      .setCharacteristic(Characteristic.FirmwareRevision, "0.8.0");
+      .setCharacteristic(Characteristic.FirmwareRevision, "0.9.0");
   }
 
   setupLockService() {
@@ -75,6 +81,9 @@ class ElectromagneticLockAccessory {
   setupDoorService() {
     this.doorService.getCharacteristic(Characteristic.ContactSensorState)
       .on("get", this.getDoorState.bind(this));
+    if (this.tamperCheck) {
+      this.doorService.addCharacteristic(Characteristic.StatusTampered);
+    }
   }
 
   handleDoorStateChange(channel, value) {
@@ -90,6 +99,13 @@ class ElectromagneticLockAccessory {
       if (state !== this.doorState) {        
         this.updateDoorState(state);
       }
+    }
+
+    if (this.tamperCheck && channel === this.tamperPin) {
+      const tamperDetected = value === 0;
+      this.log(`Tamper state changed: ${tamperDetected ? "Tampered" : "Not Tampered"}`);
+      // Update StatusTampered characteristic
+      this.updateCharacteristic(Characteristic.StatusTampered, tamperDetected);
     }
   }
 
@@ -142,6 +158,8 @@ class ElectromagneticLockAccessory {
   }
 
   unsecureLock() {
+    this.targetState = LockCurrentState.UNSECURED
+    this.lockService.updateCharacteristic(Characteristic.LockTargetState, this.targetState);
     if (this.doorState == ContactSensorState.DETECTED) {
       GPIO.write(this.buzzerPin, this.activeLow ? false : true);
       setTimeout(() => { GPIO.write(this.buzzerPin, this.activeLow ? true : false); }, 250);
@@ -155,12 +173,14 @@ class ElectromagneticLockAccessory {
       this.jammedTimeout = setTimeout(this.jammedLock.bind(this), this.unlockingDuration * 1000);
     } else {
       GPIO.write(this.buzzerPin, this.activeLow ? false : true);
-      this.currentState = LockCurrentState.UNKNOWN
+      this.currentState = LockCurrentState.UNSECURED
       this.lockService.updateCharacteristic(Characteristic.LockCurrentState, this.currentState);
       setTimeout(() => { 
         GPIO.write(this.buzzerPin, this.activeLow ? true : false); 
         this.currentState = LockCurrentState.SECURED
+        this.targetState = LockCurrentState.SECURED
         this.lockService.updateCharacteristic(Characteristic.LockCurrentState, this.currentState);
+        this.lockService.updateCharacteristic(Characteristic.LockTargetState, this.targetState);
       }, 1000);
     }
   }
@@ -219,6 +239,12 @@ class ElectromagneticLockAccessory {
         this.targetState = LockCurrentState.SECURED;
         this.lockService.updateCharacteristic(Characteristic.LockTargetState, this.targetState);
         clearTimeout(this.jammedTimeout);
+      } else {
+        const currentTime = Date.now();
+        if (currentTime - this.doorTimeout > this.unlockingDuration * 1000) {
+          GPIO.write(this.buzzerPin, this.activeLow ? false : true);
+          setTimeout(() => { GPIO.write(this.buzzerPin, this.activeLow ? true : false); }, 500);
+        }
       }
     }
   }
@@ -230,5 +256,5 @@ class ElectromagneticLockAccessory {
 
 module.exports = (homebridge) => {
   HomebridgeAPI = homebridge;
-  homebridge.registerAccessory("homebridge-electromagnetic-lock-with-reed-switch", "ElectromagneticLock", ElectromagneticLockAccessory);
+  homebridge.registerAccessory("homebridge-electromagnetic-lock-with-reed-switch", "ElectromagneticLockContact", ElectromagneticLockAccessory);
 };
