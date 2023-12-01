@@ -13,7 +13,10 @@
       "doorName": "Haustür",
       "lockPin": 37,
       "buzzerPin": 38,
-      "doorPin": 4,
+      "doorPin": 23,
+      "tamperPin": 24,
+      "tamperCheck": false,
+      "doorAlarm": true,
       "activeLow": true,
       "unlockingDuration": 40,
       "pollingInterval": 2
