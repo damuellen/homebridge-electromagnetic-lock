@@ -1,7 +1,15 @@
 const _ = require("underscore");
 const GPIO = require("rpi-gpio");
 
-const { Service, Characteristic } = HomebridgeAPI.hap;
+var Service, Characteristic, HomebridgeAPI;
+
+module.exports = function (homebridge) {
+  Service = homebridge.hap.Service;
+  Characteristic = homebridge.hap.Characteristic;
+  HomebridgeAPI = homebridge;
+
+  homebridge.registerAccessory("homebridge-electromagnetic-lock-with-reed-switch", "ElectromagneticLockContact", ElectromagneticLockAccessory);
+};
 
 const LockCurrentState = Characteristic.LockCurrentState;
 const ContactSensorState = Characteristic.ContactSensorState;
@@ -13,7 +21,7 @@ const DEFAULT_CONFIG = {
   tamperPin: 5,
   tamperCheck: false,
   doorAlarm: false,
-  activeLow: true,
+  activeLow: false,
   unlockingDuration: 40,
   pollingInterval: 2,
 };
@@ -72,7 +80,7 @@ class ElectromagneticLockAccessory {
       .setCharacteristic(Characteristic.Manufacturer, "Quantum Ultra Lock Technologies")
       .setCharacteristic(Characteristic.Model, "RaspberryPi GPIO Electromagnetic lock with door contact")
       .setCharacteristic(Characteristic.SerialNumber, "694475915589468")
-      .setCharacteristic(Characteristic.FirmwareRevision, "1.0.0");
+      .setCharacteristic(Characteristic.FirmwareRevision, "1.0.1");
   }
 
   setupLockService() {
@@ -282,8 +290,3 @@ class ElectromagneticLockAccessory {
     return [this.infoService, this.lockService, this.doorService];
   }
 }
-
-module.exports = (homebridge) => {
-  HomebridgeAPI = homebridge;
-  homebridge.registerAccessory("homebridge-electromagnetic-lock-with-reed-switch", "ElectromagneticLockContact", ElectromagneticLockAccessory);
-};
