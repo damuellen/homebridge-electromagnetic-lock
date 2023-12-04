@@ -11,8 +11,13 @@ module.exports = function (homebridge) {
   homebridge.registerAccessory("homebridge-electromagnetic-lock-with-reed-switch", "ElectromagneticLockContact", ElectromagneticLockAccessory);
 };
 
-const LockCurrentState = Characteristic.LockCurrentState;
-const ContactSensorState = Characteristic.ContactSensorState;
+const LOCK_UNSECURED = 0;
+const LOCK_SECURED = 1;
+const LOCK_JAMMED = 2;
+const LOCK_UNKNOWN = 3;
+
+const DOOR_DETECTED = 0;
+const DOOR_NOT_DETECTED = 1;
 
 const DEFAULT_CONFIG = {
   lockPin: 37,
@@ -43,8 +48,8 @@ class ElectromagneticLockAccessory {
     this.unlockingDuration = config.unlockingDuration;
     this.pollingInterval = config.pollingInterval;
 
-    this.doorState = ContactSensorState.DETECTED;
-    this.currentState = LockCurrentState.SECURED;
+    this.doorState = DOOR_DETECTED;
+    this.currentState = LOCK_SECURED;
     this.targetState = this.currentState;
 
     this.jammedTimeout;
@@ -80,7 +85,7 @@ class ElectromagneticLockAccessory {
       .setCharacteristic(Characteristic.Manufacturer, "Quantum Ultra Lock Technologies")
       .setCharacteristic(Characteristic.Model, "RaspberryPi GPIO Electromagnetic lock with door contact")
       .setCharacteristic(Characteristic.SerialNumber, "694475915589468")
-      .setCharacteristic(Characteristic.FirmwareRevision, "1.0.1");
+      .setCharacteristic(Characteristic.FirmwareRevision, "1.0.2");
   }
 
   setupLockService() {
@@ -102,11 +107,11 @@ class ElectromagneticLockAccessory {
 
   handleDoorStateChange(channel, value) {
     if (channel === this.doorPin) {
-      const state = value ? ContactSensorState.DETECTED : ContactSensorState.NOT_DETECTED;
+      const state = value ? DOOR_DETECTED : DOOR_NOT_DETECTED;
 
-      if (state == ContactSensorState.DETECTED && this.currentState != LockCurrentState.SECURED && this.targetState == LockCurrentState.SECURED) {
+      if (state == DOOR_DETECTED && this.currentState != LOCK_SECURED && this.targetState == LOCK_SECURED) {
         clearInterval(this.unlockInterval);
-        this.currentState = LockCurrentState.SECURED;
+        this.currentState = LOCK_SECURED;
         this.lockService.updateCharacteristic(Characteristic.LockCurrentState, this.currentState);
       }
 
@@ -114,7 +119,7 @@ class ElectromagneticLockAccessory {
         this.updateDoorState(state);
       }
 
-      if (this.doorAlarm && state === ContactSensorState.NOT_DETECTED) {
+      if (this.doorAlarm && state === DOOR_NOT_DETECTED) {
         this.openDoorTimeout = setTimeout(this.openDoorAlarm, this.unlockingDuration * 1000 * 3);
       } else if (this.doorAlarm) {
         clearTimeout(this.openDoorTimeout);
@@ -143,13 +148,13 @@ class ElectromagneticLockAccessory {
   updateDoorState(newState) {
     const currentTime = Date.now();
     
-    if (this.currentState != LockCurrentState.SECURED) {
+    if (this.currentState != LOCK_SECURED) {
       if (currentTime - this.doorTimeout <= 500) {
-        this.currentState = LockCurrentState.JAMMED;
-      } else if (this.currentState == LockCurrentState.JAMMED) {
-        this.currentState = LockCurrentState.SECURED;
-      } else if (this.currentState == LockCurrentState.UNKNOWN) {
-        this.currentState = LockCurrentState.SECURED;
+        this.currentState = LOCK_JAMMED;
+      } else if (this.currentState == LOCK_JAMMED) {
+        this.currentState = LOCK_SECURED;
+      } else if (this.currentState == LOCK_UNKNOWN) {
+        this.currentState = LOCK_SECURED;
       }
       this.lockService.updateCharacteristic(Characteristic.LockCurrentState, this.currentState);
     } 
@@ -189,27 +194,27 @@ class ElectromagneticLockAccessory {
   }
 
   unsecureLock() {
-    this.targetState = LockCurrentState.UNSECURED
+    this.targetState = LOCK_UNSECURED
     this.lockService.updateCharacteristic(Characteristic.LockTargetState, this.targetState);
-    if (this.doorState == ContactSensorState.DETECTED) {
+    if (this.doorState == DOOR_DETECTED) {
       GPIO.write(this.buzzerPin, this.activeLow ? false : true);
       setTimeout(() => { GPIO.write(this.buzzerPin, this.activeLow ? true : false); }, 250);
       setTimeout(() => { GPIO.write(this.buzzerPin, this.activeLow ? false : false); }, 500);
       setTimeout(() => { GPIO.write(this.buzzerPin, this.activeLow ? true : false); }, 750);
       GPIO.write(this.lockPin, this.activeLow ? false : true); // Released
       this.log("Setting lockPin " + this.lockPin + " to %s", this.activeLow ? "LOW" : "HIGH");
-      this.currentState = LockCurrentState.UNSECURED
+      this.currentState = LOCK_UNSECURED
       this.lockService.updateCharacteristic(Characteristic.LockCurrentState, this.currentState);
       this.unlockInterval = setInterval(this.unsecuredLock.bind(this), this.pollingInterval * 1000);
       this.jammedTimeout = setTimeout(this.jammedLock.bind(this), this.unlockingDuration * 1000);
     } else {
       GPIO.write(this.buzzerPin, this.activeLow ? false : true);
-      this.currentState = LockCurrentState.UNSECURED
+      this.currentState = LOCK_UNSECURED
       this.lockService.updateCharacteristic(Characteristic.LockCurrentState, this.currentState);
       setTimeout(() => { 
         GPIO.write(this.buzzerPin, this.activeLow ? true : false); 
-        this.currentState = LockCurrentState.SECURED
-        this.targetState = LockCurrentState.SECURED
+        this.currentState = LOCK_SECURED
+        this.targetState = LOCK_SECURED
         this.lockService.updateCharacteristic(Characteristic.LockCurrentState, this.currentState);
         this.lockService.updateCharacteristic(Characteristic.LockTargetState, this.targetState);
       }, 1000);
@@ -218,17 +223,17 @@ class ElectromagneticLockAccessory {
 
   secureLock() {
     GPIO.write(this.lockPin, this.activeLow ? true : false);
-    this.targetState = LockCurrentState.SECURED
+    this.targetState = LOCK_SECURED
     this.lockService.updateCharacteristic(Characteristic.LockTargetState, this.targetState);
 
-    if (this.doorState == ContactSensorState.DETECTED) {
-      this.currentState = LockCurrentState.SECURED;
+    if (this.doorState == DOOR_DETECTED) {
+      this.currentState = LOCK_SECURED;
       this.lockService.updateCharacteristic(Characteristic.LockCurrentState, this.currentState);
       this.log("Setting %s to SECURED", this.name);
       GPIO.write(this.buzzerPin, this.activeLow ? false : true);
       setTimeout(() => { GPIO.write(this.buzzerPin, this.activeLow ? true : false); }, 250);
-    } else if (this.doorState == ContactSensorState.NOT_DETECTED) {
-      this.currentState = Characteristic.LockCurrentState.SECURED;
+    } else if (this.doorState == DOOR_NOT_DETECTED) {
+      this.currentState = Characteristic.LOCK_SECURED;
       this.lockService.updateCharacteristic(Characteristic.LockCurrentState, this.currentState);
       this.log("Setting %s to SECURED", this.name);
       GPIO.write(this.buzzerPin, this.activeLow ? false : true);
@@ -238,7 +243,7 @@ class ElectromagneticLockAccessory {
 
   jammedLock() {
     clearInterval(this.unlockInterval);
-    if (this.doorState == ContactSensorState.DETECTED && this.currentState == LockCurrentState.UNSECURED) {
+    if (this.doorState == DOOR_DETECTED && this.currentState == LOCK_UNSECURED) {
       GPIO.write(this.lockPin, this.activeLow ? true : false);
       this.log("Setting lockPin %s to %s", this.lockPin, this.activeLow ? "HIGH" : "LOW");
 
@@ -246,18 +251,18 @@ class ElectromagneticLockAccessory {
       if (currentTime - this.doorTimeout >= this.unlockingDuration * 1000) {
         setTimeout(() => { GPIO.write(this.buzzerPin, this.activeLow ? false : true); }, 1000);
         setTimeout(() => { GPIO.write(this.buzzerPin, this.activeLow ? true : false); }, 2000);
-        this.currentState = LockCurrentState.JAMMED;
+        this.currentState = LOCK_JAMMED;
         this.lockService.updateCharacteristic(Characteristic.LockCurrentState, this.currentState);
       }
     }
   }
 
   unsecuredLock() {
-    this.log("Door reed switch %s is %s", this.doorPin, this.doorState == ContactSensorState.DETECTED ? "CLOSED" : "OPEN");
-    if (this.doorState == ContactSensorState.DETECTED) {
-      if (this.targetState == LockCurrentState.SECURED) {
-        if (this.currentState != LockCurrentState.SECURED) {
-          this.currentState = LockCurrentState.SECURED;
+    this.log("Door reed switch %s is %s", this.doorPin, this.doorState == DOOR_DETECTED ? "CLOSED" : "OPEN");
+    if (this.doorState == DOOR_DETECTED) {
+      if (this.targetState == LOCK_SECURED) {
+        if (this.currentState != LOCK_SECURED) {
+          this.currentState = LOCK_SECURED;
           this.lockService.updateCharacteristic(Characteristic.LockCurrentState, this.currentState);
         }
         clearInterval(this.unlockInterval);
@@ -267,13 +272,13 @@ class ElectromagneticLockAccessory {
         setTimeout(() => { GPIO.write(this.buzzerPin, this.activeLow ? false : false); }, 500);
         setTimeout(() => { GPIO.write(this.buzzerPin, this.activeLow ? true : false); }, 750);
       }
-    } else if (this.doorState == ContactSensorState.NOT_DETECTED) {
-      if (this.targetState == LockCurrentState.UNSECURED) {
+    } else if (this.doorState == DOOR_NOT_DETECTED) {
+      if (this.targetState == LOCK_UNSECURED) {
         GPIO.write(this.lockPin, this.activeLow ? true : false);
         GPIO.write(this.buzzerPin, this.activeLow ? false : true);
         setTimeout(() => { GPIO.write(this.buzzerPin, this.activeLow ? true : false); }, 250);
         this.log("Setting lockPin %s to %s", this.lockPin, this.activeLow ? "LOW" : "HIGH");
-        this.targetState = LockCurrentState.SECURED;
+        this.targetState = LOCK_SECURED;
         this.lockService.updateCharacteristic(Characteristic.LockTargetState, this.targetState);
         clearTimeout(this.jammedTimeout);
       } else {
