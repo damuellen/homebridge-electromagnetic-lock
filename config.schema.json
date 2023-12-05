@@ -18,6 +18,12 @@
         "required": true,
         "description": "The name of the door contact, e.g., Lock."
       },
+      "bellName": {
+        "title": "Name",
+        "type": "string",
+        "required": true,
+        "description": "The name of the bell switch, e.g., Gong."
+      },
       "lockPin": {
         "title": "Lock GPIO pin",
         "type": "integer",
@@ -29,6 +35,12 @@
         "type": "integer",
         "required": true,
         "description": "GPIO pin connected to the active buzzer (use Raspberry Pi numbering)."
+      },
+      "bellPin": {
+        "title": "Active buzzer GPIO pin",
+        "type": "integer",
+        "required": true,
+        "description": "GPIO pin connected to the switch (use Raspberry Pi numbering)."
       },
       "doorPin": {
         "title": "Reed switch GPIO pin",

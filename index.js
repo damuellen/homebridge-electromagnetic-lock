@@ -22,6 +22,7 @@ const DOOR_NOT_DETECTED = 1;
 const DEFAULT_CONFIG = {
   lockPin: 37,
   buzzerPin: 38,
+  bellPin: 40,
   doorPin: 4,
   tamperPin: 5,
   tamperCheck: false,
@@ -38,9 +39,11 @@ class ElectromagneticLockAccessory {
     this.log = log;
     this.name = config.name;
     this.doorName = config.doorName;
+    this.bellName = config.bellName;
     this.lockPin = config.lockPin;
     this.buzzerPin = config.buzzerPin;
     this.doorPin = config.doorPin;
+    this.bellPin = config.bellPin;
     this.tamperPin = config.tamperPin;
     this.tamperCheck = config.tamperCheck;
     this.doorAlarm = config.doorAlarm;
@@ -58,6 +61,7 @@ class ElectromagneticLockAccessory {
 
     this.lockService = new Service.LockMechanism(this.name);
     this.doorService = new Service.ContactSensor(this.doorName);
+    this.bellService = new Service.Switch(this.bellName);
     this.infoService = new Service.AccessoryInformation();
 
     try {
@@ -71,6 +75,7 @@ class ElectromagneticLockAccessory {
   setupGPIO() {
     GPIO.setup(this.lockPin, this.activeLow ? GPIO.DIR_HIGH : GPIO.DIR_LOW);
     GPIO.setup(this.buzzerPin, this.activeLow ? GPIO.DIR_HIGH : GPIO.DIR_LOW);
+    GPIO.setup(this.bellPin, this.activeLow ? GPIO.DIR_HIGH : GPIO.DIR_LOW);
     GPIO.setup(this.doorPin, GPIO.DIR_IN, GPIO.EDGE_BOTH);
     if (this.tamperCheck) {
       GPIO.setup(this.tamperPin, GPIO.DIR_IN, GPIO.EDGE_BOTH);
@@ -81,6 +86,7 @@ class ElectromagneticLockAccessory {
   setupServices() {
     this.setupLockService();
     this.setupDoorService();
+    this.setupBellService();
     this.setupAccessoryInformationService();
   }
 
@@ -89,7 +95,13 @@ class ElectromagneticLockAccessory {
       .setCharacteristic(Characteristic.Manufacturer, "Quantum Ultra Lock Technologies")
       .setCharacteristic(Characteristic.Model, "RaspberryPi GPIO Electromagnetic lock with door contact")
       .setCharacteristic(Characteristic.SerialNumber, "694475915589468")
-      .setCharacteristic(Characteristic.FirmwareRevision, "1.0.4");
+      .setCharacteristic(Characteristic.FirmwareRevision, "1.1.0");
+  }
+
+  setupBellService() {
+    this.BellService.getCharacteristic(Characteristic.On)
+    .on("set", this.setBellState.bind(this))
+    .on('get', callback => { callback(undefined, false); });
   }
 
   setupLockService() {
@@ -192,6 +204,14 @@ class ElectromagneticLockAccessory {
     });
   }
 
+  bell(value) {
+    GPIO.write(this.bellPin, value, (err) => {
+      if (err) {
+        this.error(`Error writing to GPIO Pin of bell ${outputPin}: ${err}`);
+      }
+    });
+  }
+
   getCurrentLockState(callback) {
     this.log("Lock current state: %s", this.currentState);
     callback(undefined, this.currentState);
@@ -205,6 +225,17 @@ class ElectromagneticLockAccessory {
   getDoorState(callback) {
     this.log("Door current state: %s", this.doorState);
     callback(undefined, this.doorState);
+  }
+
+  setBellState(state, callback) { 
+    this.log("Door current state: %s", this.doorState);
+    this.bell(state)
+    this.bellService.updateCharacteristic(Characteristic.On, state);
+    setTimeout(() => { 
+      this.bell(state)
+      this.bellService.updateCharacteristic(Characteristic.On, !state);
+    }, 1000);
+    callback(undefined, state);
   }
 
   setTargetLockState(state, callback) {
