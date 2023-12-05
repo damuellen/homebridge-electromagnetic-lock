@@ -60,8 +60,12 @@ class ElectromagneticLockAccessory {
     this.doorService = new Service.ContactSensor(this.doorName);
     this.infoService = new Service.AccessoryInformation();
 
-    this.setupGPIO();
-    this.setupServices();
+    try {
+      this.setupGPIO();
+      this.setupServices();
+    } catch (error) {
+      console.error(`Error: ${error}`);
+    }
   }
 
   setupGPIO() {
@@ -85,7 +89,7 @@ class ElectromagneticLockAccessory {
       .setCharacteristic(Characteristic.Manufacturer, "Quantum Ultra Lock Technologies")
       .setCharacteristic(Characteristic.Model, "RaspberryPi GPIO Electromagnetic lock with door contact")
       .setCharacteristic(Characteristic.SerialNumber, "694475915589468")
-      .setCharacteristic(Characteristic.FirmwareRevision, "1.0.3");
+      .setCharacteristic(Characteristic.FirmwareRevision, "1.0.4");
   }
 
   setupLockService() {
@@ -105,7 +109,7 @@ class ElectromagneticLockAccessory {
     }
     GPIO.read(this.doorPin, (err, value) => {
       if (err) {
-        console.error(`Error reading GPIO Pin ${inputPin}: ${err}`);
+        this.log(`Error reading GPIO Pin ${inputPin}: ${err}`);
       } else {
         const state = value ? DOOR_DETECTED : DOOR_NOT_DETECTED;
         this.updateDoorState(state);
@@ -175,7 +179,7 @@ class ElectromagneticLockAccessory {
   setLock(value) {
     GPIO.write(this.lockPin, value, (err) => {
       if (err) {
-        console.error(`Error writing to GPIO Pin of lock ${outputPin}: ${err}`);
+        this.error(`Error writing to GPIO Pin of lock ${outputPin}: ${err}`);
       }
     });
   }
@@ -183,7 +187,7 @@ class ElectromagneticLockAccessory {
   buzzer(value) {
     GPIO.write(this.buzzerPin, value, (err) => {
       if (err) {
-        console.error(`Error writing to GPIO Pin of buzzer ${outputPin}: ${err}`);
+        this.error(`Error writing to GPIO Pin of buzzer ${outputPin}: ${err}`);
       }
     });
   }
@@ -205,15 +209,17 @@ class ElectromagneticLockAccessory {
 
   setTargetLockState(state, callback) {
     this.log("Setting %s to %s", this.name, state ? "SECURED" : "UNSECURED");
-
-    if (state) {
-      clearInterval(this.unlockInterval);
-      clearTimeout(this.jammedTimeout);
-      this.secureLock();
-    } else {
-      this.unsecureLock();
+    try {
+      if (state) {
+        clearInterval(this.unlockInterval);
+        clearTimeout(this.jammedTimeout);
+        this.secureLock();
+      } else {
+        this.unsecureLock();
+      }
+    } catch (error) {
+      console.error(`Error: ${error}`);
     }
-
     callback();
   }
 
