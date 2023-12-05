@@ -95,7 +95,7 @@ class ElectromagneticLockAccessory {
       .setCharacteristic(Characteristic.Manufacturer, "Quantum Ultra Lock Technologies")
       .setCharacteristic(Characteristic.Model, "RaspberryPi GPIO Electromagnetic lock with door contact")
       .setCharacteristic(Characteristic.SerialNumber, "694475915589468")
-      .setCharacteristic(Characteristic.FirmwareRevision, "1.1.3");
+      .setCharacteristic(Characteristic.FirmwareRevision, "1.1.4");
   }
 
   setupBellService() {
@@ -240,7 +240,7 @@ class ElectromagneticLockAccessory {
         this.bellService.setCharacteristic(Characteristic.On, false);
       }, 2000);
     }
-    callback(undefined, state);
+    callback();
   }
 
   setTargetLockState(state, callback) {
