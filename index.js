@@ -76,11 +76,11 @@ class ElectromagneticLockAccessory {
     GPIO.setup(this.lockPin, this.activeLow ? GPIO.DIR_HIGH : GPIO.DIR_LOW);
     GPIO.setup(this.buzzerPin, this.activeLow ? GPIO.DIR_HIGH : GPIO.DIR_LOW);
     GPIO.setup(this.bellPin, this.activeLow ? GPIO.DIR_HIGH : GPIO.DIR_LOW);
-    GPIO.setup(this.doorPin, GPIO.DIR_IN, GPIO.EDGE_BOTH);
+    GPIO.setup(this.doorPin, GPIO.DIR_IN, GPIO.EDGE_NONE);
     if (this.tamperCheck) {
-      GPIO.setup(this.tamperPin, GPIO.DIR_IN, GPIO.EDGE_BOTH);
+      GPIO.setup(this.tamperPin, GPIO.DIR_IN, GPIO.EDGE_NONE);
     }
-    GPIO.on('change', this.handleDoorStateChange.bind(this));
+    setInterval(this.handleDoorStateChange, 500)
   }
 
   setupServices() {
@@ -95,7 +95,7 @@ class ElectromagneticLockAccessory {
       .setCharacteristic(Characteristic.Manufacturer, "Quantum Ultra Lock Technologies")
       .setCharacteristic(Characteristic.Model, "RaspberryPi GPIO Electromagnetic lock with door contact")
       .setCharacteristic(Characteristic.SerialNumber, "694475915589468")
-      .setCharacteristic(Characteristic.FirmwareRevision, "1.1.6");
+      .setCharacteristic(Characteristic.FirmwareRevision, "1.1.7");
   }
 
   setupBellService() {
@@ -132,33 +132,42 @@ class ElectromagneticLockAccessory {
     });
   }
 
-  handleDoorStateChange(channel, value) {
-    if (channel === this.doorPin) {
-      const state = value ? DOOR_DETECTED : DOOR_NOT_DETECTED;
+  handleDoorStateChange() {
 
-      if (state == DOOR_DETECTED && this.currentState != LOCK_SECURED && this.targetState == LOCK_SECURED) {
-        clearInterval(this.unlockInterval);
-        this.currentState = LOCK_SECURED;
-        this.lockService.updateCharacteristic(Characteristic.LockCurrentState, this.currentState);
+    GPIO.read(this.doorPin, (err, value) => {
+      if (err) {
+        this.log(`Error reading GPIO Pin ${inputPin}: ${err}`);
+      } else {
+        const state = value ? DOOR_DETECTED : DOOR_NOT_DETECTED;
+
+        if (state == DOOR_DETECTED && this.currentState != LOCK_SECURED && this.targetState == LOCK_SECURED) {
+          clearInterval(this.unlockInterval);
+          this.currentState = LOCK_SECURED;
+          this.lockService.updateCharacteristic(Characteristic.LockCurrentState, this.currentState);
+        }
+
+        if (state !== this.doorState) {        
+          this.updateDoorState(state);
+        }
+
+        if (this.doorAlarm && state === DOOR_NOT_DETECTED) {
+          this.openDoorTimeout = setTimeout(this.openDoorAlarm, this.unlockingDuration * 1000 * 3);
+        } else if (this.doorAlarm) {
+          clearTimeout(this.openDoorTimeout);
+        }    
       }
+    });
 
-      if (state !== this.doorState) {        
-        this.updateDoorState(state);
+    GPIO.read(this.tamperCheck, (err, value) => {
+      if (err) {
+        this.log(`Error reading GPIO Pin ${inputPin}: ${err}`);
+      } else {
+        const tamperDetected = value === 0;
+        this.log(`Tamper state changed: ${tamperDetected ? "Tampered" : "Not Tampered"}`);
+        // Update StatusTampered characteristic
+        this.updateCharacteristic(Characteristic.StatusTampered, tamperDetected);
       }
-
-      if (this.doorAlarm && state === DOOR_NOT_DETECTED) {
-        this.openDoorTimeout = setTimeout(this.openDoorAlarm, this.unlockingDuration * 1000 * 3);
-      } else if (this.doorAlarm) {
-        clearTimeout(this.openDoorTimeout);
-      }
-    }
-
-    if (this.tamperCheck && channel === this.tamperPin) {
-      const tamperDetected = value === 0;
-      this.log(`Tamper state changed: ${tamperDetected ? "Tampered" : "Not Tampered"}`);
-      // Update StatusTampered characteristic
-      this.updateCharacteristic(Characteristic.StatusTampered, tamperDetected);
-    }
+    });
   }
 
   openDoorAlarm(repeatCount = 3) {
@@ -176,7 +185,7 @@ class ElectromagneticLockAccessory {
     const currentTime = Date.now();
     
     if (this.currentState != LOCK_SECURED) {
-      if (currentTime - this.doorTimeout <= 500) {
+      if (currentTime - this.doorTimeout <= 1000) {
         this.currentState = LOCK_JAMMED;
       } else if (this.currentState == LOCK_JAMMED) {
         this.currentState = LOCK_SECURED;
@@ -246,6 +255,7 @@ class ElectromagneticLockAccessory {
   setTargetLockState(state, callback) {
     this.log("Setting %s to %s", this.name, state ? "SECURED" : "UNSECURED");
     try {
+      this.handleDoorStateChange();
       if (state) {
         clearInterval(this.unlockInterval);
         clearTimeout(this.jammedTimeout);

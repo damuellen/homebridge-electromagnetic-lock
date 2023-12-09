@@ -27,24 +27,28 @@
       "lockPin": {
         "title": "Lock GPIO pin",
         "type": "integer",
-        "required": true,
+        "default": 37,
+        "required": true,        
         "description": "GPIO pin used for unlocking the lock (use Raspberry Pi numbering)."
       },
       "buzzerPin": {
         "title": "Active buzzer GPIO pin",
         "type": "integer",
+        "default": 38,
         "required": true,
         "description": "GPIO pin connected to the active buzzer (use Raspberry Pi numbering)."
       },
       "bellPin": {
-        "title": "Active buzzer GPIO pin",
+        "title": "Switch GPIO pin",
         "type": "integer",
+        "default": 40,
         "required": true,
         "description": "GPIO pin connected to the switch (use Raspberry Pi numbering)."
       },
       "doorPin": {
         "title": "Reed switch GPIO pin",
         "type": "integer",
+        "default": 16,
         "required": true,
         "description": "GPIO pin connected to the reed switch (use Raspberry Pi numbering)."
       },
