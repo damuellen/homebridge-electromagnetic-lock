@@ -79,6 +79,7 @@ class ElectromagneticLockAccessory {
     GPIO.setup(this.doorPin, GPIO.DIR_IN, GPIO.EDGE_NONE);
     if (this.tamperCheck) {
       GPIO.setup(this.tamperPin, GPIO.DIR_IN, GPIO.EDGE_NONE);
+      setInterval(this.handleTamperCheck, 5011)
     }
     setInterval(this.handleDoorStateChange, 500)
   }
@@ -95,7 +96,7 @@ class ElectromagneticLockAccessory {
       .setCharacteristic(Characteristic.Manufacturer, "Quantum Ultra Lock Technologies")
       .setCharacteristic(Characteristic.Model, "RaspberryPi GPIO Electromagnetic lock with door contact")
       .setCharacteristic(Characteristic.SerialNumber, "694475915589468")
-      .setCharacteristic(Characteristic.FirmwareRevision, "1.1.7");
+      .setCharacteristic(Characteristic.FirmwareRevision, "1.1.8");
   }
 
   setupBellService() {
@@ -132,8 +133,20 @@ class ElectromagneticLockAccessory {
     });
   }
 
-  handleDoorStateChange() {
+  handleTamperCheck() {
+    GPIO.read(this.tamperCheck, (err, value) => {
+      if (err) {
+        this.log(`Error reading GPIO Pin ${inputPin}: ${err}`);
+      } else {
+        const tamperDetected = value === 0;
+        this.log(`Tamper state changed: ${tamperDetected ? "Tampered" : "Not Tampered"}`);
+        // Update StatusTampered characteristic
+        this.updateCharacteristic(Characteristic.StatusTampered, tamperDetected);
+      }
+    });
+  }
 
+  handleDoorStateChange() {
     GPIO.read(this.doorPin, (err, value) => {
       if (err) {
         this.log(`Error reading GPIO Pin ${inputPin}: ${err}`);
@@ -155,17 +168,6 @@ class ElectromagneticLockAccessory {
         } else if (this.doorAlarm) {
           clearTimeout(this.openDoorTimeout);
         }    
-      }
-    });
-
-    GPIO.read(this.tamperCheck, (err, value) => {
-      if (err) {
-        this.log(`Error reading GPIO Pin ${inputPin}: ${err}`);
-      } else {
-        const tamperDetected = value === 0;
-        this.log(`Tamper state changed: ${tamperDetected ? "Tampered" : "Not Tampered"}`);
-        // Update StatusTampered characteristic
-        this.updateCharacteristic(Characteristic.StatusTampered, tamperDetected);
       }
     });
   }
