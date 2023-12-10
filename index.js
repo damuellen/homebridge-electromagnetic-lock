@@ -96,7 +96,7 @@ class ElectromagneticLockAccessory {
       .setCharacteristic(Characteristic.Manufacturer, "Quantum Ultra Lock Technologies")
       .setCharacteristic(Characteristic.Model, "RaspberryPi GPIO Electromagnetic lock with door contact")
       .setCharacteristic(Characteristic.SerialNumber, "694475915589468")
-      .setCharacteristic(Characteristic.FirmwareRevision, "1.1.8");
+      .setCharacteristic(Characteristic.FirmwareRevision, "1.1.9");
   }
 
   setupBellService() {
@@ -186,7 +186,7 @@ class ElectromagneticLockAccessory {
   updateDoorState(newState) {
     const currentTime = Date.now();
     
-    if (this.currentState != LOCK_SECURED) {
+    if (newState == DOOR_DETECTED && this.currentState != LOCK_SECURED) {
       if (currentTime - this.doorTimeout <= 1000) {
         this.currentState = LOCK_JAMMED;
       } else if (this.currentState == LOCK_JAMMED) {
