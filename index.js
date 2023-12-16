@@ -58,6 +58,7 @@ class ElectromagneticLockAccessory {
     this.jammedTimeout;
     this.unlockInterval;
     this.openDoorTimeout;
+    this.doorInterval;
 
     this.lockService = new Service.LockMechanism(this.name);
     this.doorService = new Service.ContactSensor(this.doorName);
@@ -81,7 +82,7 @@ class ElectromagneticLockAccessory {
       GPIO.setup(this.tamperPin, GPIO.DIR_IN, GPIO.EDGE_NONE);
       setInterval(this.handleTamperCheck, 5011)
     }
-    setInterval(this.handleDoorStateChange, 500)
+    this.doorInterval = setInterval(this.handleDoorStateChange, this.pollingInterval * 1000)
   }
 
   setupServices() {
@@ -96,7 +97,7 @@ class ElectromagneticLockAccessory {
       .setCharacteristic(Characteristic.Manufacturer, "Quantum Ultra Lock Technologies")
       .setCharacteristic(Characteristic.Model, "RaspberryPi GPIO Electromagnetic lock with door contact")
       .setCharacteristic(Characteristic.SerialNumber, "694475915589468")
-      .setCharacteristic(Characteristic.FirmwareRevision, "1.1.9");
+      .setCharacteristic(Characteristic.FirmwareRevision, "1.2.0");
   }
 
   setupBellService() {
@@ -272,6 +273,8 @@ class ElectromagneticLockAccessory {
   }
 
   unsecureLock() {
+    clearInterval(this.doorInterval)
+    this.handleDoorStateChange()
     this.targetState = LOCK_UNSECURED
     this.lockService.updateCharacteristic(Characteristic.LockTargetState, this.targetState);
     if (this.doorState == DOOR_DETECTED) {
@@ -300,6 +303,9 @@ class ElectromagneticLockAccessory {
   }
 
   secureLock() {
+    clearInterval(this.doorInterval)
+    this.handleDoorStateChange()
+    this.doorInterval = setInterval(this.handleDoorStateChange, this.pollingInterval * 1000)
     this.setLock(this.activeLow ? true : false);
     this.targetState = LOCK_SECURED
     this.lockService.updateCharacteristic(Characteristic.LockTargetState, this.targetState);
@@ -321,6 +327,9 @@ class ElectromagneticLockAccessory {
 
   jammedLock() {
     clearInterval(this.unlockInterval);
+    clearInterval(this.doorInterval)
+    this.handleDoorStateChange()
+    this.doorInterval = setInterval(this.handleDoorStateChange, this.pollingInterval * 1000)
     if (this.doorState == DOOR_DETECTED && this.currentState == LOCK_UNSECURED) {
       this.setLock(this.activeLow ? true : false);
       this.log("Setting lockPin %s to %s", this.lockPin, this.activeLow ? "HIGH" : "LOW");
@@ -336,6 +345,8 @@ class ElectromagneticLockAccessory {
   }
 
   unsecuredLock() {
+    clearInterval(this.doorInterval)
+    this.handleDoorStateChange()
     this.log("Door reed switch %s is %s", this.doorPin, this.doorState == DOOR_DETECTED ? "CLOSED" : "OPEN");
     if (this.doorState == DOOR_DETECTED) {
       if (this.targetState == LOCK_SECURED) {
