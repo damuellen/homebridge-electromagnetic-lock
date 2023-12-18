@@ -55,6 +55,7 @@
       "tamperPin": {
         "title": "Tamper GPIO pin",
         "type": "integer",
+        "default": 15,
         "required": true,
         "description": "GPIO pin connected to the power (use Raspberry Pi numbering)."
       },

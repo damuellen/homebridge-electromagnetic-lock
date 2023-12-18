@@ -23,8 +23,8 @@ const DEFAULT_CONFIG = {
   lockPin: 37,
   buzzerPin: 38,
   bellPin: 40,
-  doorPin: 4,
-  tamperPin: 5,
+  doorPin: 16,
+  tamperPin: 15,
   tamperCheck: false,
   doorAlarm: false,
   activeLow: false,
@@ -50,7 +50,7 @@ class ElectromagneticLockAccessory {
     this.activeLow = config.activeLow;
     this.unlockingDuration = config.unlockingDuration;
     this.pollingInterval = config.pollingInterval;
-
+    this.log(`Config ${config}`);
     this.doorState = DOOR_DETECTED;
     this.currentState = LOCK_SECURED;
     this.targetState = LOCK_SECURED;
@@ -77,9 +77,9 @@ class ElectromagneticLockAccessory {
     GPIO.setup(this.lockPin, this.activeLow ? GPIO.DIR_HIGH : GPIO.DIR_LOW);
     GPIO.setup(this.buzzerPin, this.activeLow ? GPIO.DIR_HIGH : GPIO.DIR_LOW);
     GPIO.setup(this.bellPin, this.activeLow ? GPIO.DIR_HIGH : GPIO.DIR_LOW);
-    GPIO.setup(this.doorPin, GPIO.DIR_IN, GPIO.EDGE_NONE);
+    GPIO.setup(this.doorPin, GPIO.DIR_IN, GPIO.BOTH);
     if (this.tamperCheck) {
-      GPIO.setup(this.tamperPin, GPIO.DIR_IN, GPIO.EDGE_NONE);
+      GPIO.setup(this.tamperPin, GPIO.DIR_IN, GPIO.BOTH);
       setInterval(this.handleTamperCheck, 5011)
     }
     this.doorInterval = setInterval(this.handleDoorStateChange, this.pollingInterval * 1000)
@@ -97,7 +97,7 @@ class ElectromagneticLockAccessory {
       .setCharacteristic(Characteristic.Manufacturer, "Quantum Ultra Lock Technologies")
       .setCharacteristic(Characteristic.Model, "RaspberryPi GPIO Electromagnetic lock with door contact")
       .setCharacteristic(Characteristic.SerialNumber, "694475915589468")
-      .setCharacteristic(Characteristic.FirmwareRevision, "1.2.1");
+      .setCharacteristic(Characteristic.FirmwareRevision, "1.2.2");
   }
 
   setupBellService() {

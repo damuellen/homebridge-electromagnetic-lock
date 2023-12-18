@@ -16,7 +16,7 @@
       "buzzerPin": 38,
       "bellPin": 40,
       "doorPin": 16,
-      "tamperPin": 17,
+      "tamperPin": 15,
       "tamperCheck": false,
       "doorAlarm": true,
       "activeLow": true,
