@@ -97,7 +97,7 @@ class ElectromagneticLockAccessory {
       .setCharacteristic(Characteristic.Manufacturer, "Quantum Ultra Lock Technologies")
       .setCharacteristic(Characteristic.Model, "RaspberryPi GPIO Electromagnetic lock with door contact")
       .setCharacteristic(Characteristic.SerialNumber, "694475915589468")
-      .setCharacteristic(Characteristic.FirmwareRevision, "1.2.0");
+      .setCharacteristic(Characteristic.FirmwareRevision, "1.2.1");
   }
 
   setupBellService() {
@@ -126,7 +126,7 @@ class ElectromagneticLockAccessory {
     }
     GPIO.read(this.doorPin, (err, value) => {
       if (err) {
-        this.log(`Error reading GPIO Pin ${inputPin}: ${err}`);
+        this.log(`Error reading GPIO Pin ${err}`);
       } else {
         const state = value ? DOOR_DETECTED : DOOR_NOT_DETECTED;
         this.updateDoorState(state);
@@ -137,7 +137,7 @@ class ElectromagneticLockAccessory {
   handleTamperCheck() {
     GPIO.read(this.tamperCheck, (err, value) => {
       if (err) {
-        this.log(`Error reading GPIO Pin ${inputPin}: ${err}`);
+        this.log(`Error reading GPIO Pin ${err}`);
       } else {
         const tamperDetected = value === 0;
         this.log(`Tamper state changed: ${tamperDetected ? "Tampered" : "Not Tampered"}`);
@@ -150,7 +150,7 @@ class ElectromagneticLockAccessory {
   handleDoorStateChange() {
     GPIO.read(this.doorPin, (err, value) => {
       if (err) {
-        this.log(`Error reading GPIO Pin ${inputPin}: ${err}`);
+        this.log(`Error reading GPIO Pin ${err}`);
       } else {
         const state = value ? DOOR_DETECTED : DOOR_NOT_DETECTED;
 
@@ -206,7 +206,7 @@ class ElectromagneticLockAccessory {
   setLock(value) {
     GPIO.write(this.lockPin, value, (err) => {
       if (err) {
-        this.error(`Error writing to GPIO Pin of lock ${outputPin}: ${err}`);
+        this.error(`Error writing to GPIO Pin of lock ${err}`);
       }
     });
   }
@@ -214,7 +214,7 @@ class ElectromagneticLockAccessory {
   buzzer(value) {
     GPIO.write(this.buzzerPin, value, (err) => {
       if (err) {
-        this.error(`Error writing to GPIO Pin of buzzer ${outputPin}: ${err}`);
+        this.error(`Error writing to GPIO Pin of buzzer ${err}`);
       }
     });
   }
@@ -222,7 +222,7 @@ class ElectromagneticLockAccessory {
   bell(value) {
     GPIO.write(this.bellPin, value, (err) => {
       if (err) {
-        this.error(`Error writing to GPIO Pin of bell ${outputPin}: ${err}`);
+        this.error(`Error writing to GPIO Pin of bell ${err}`);
       }
     });
   }
