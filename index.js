@@ -97,14 +97,13 @@ class ElectromagneticLockAccessory {
       .setCharacteristic(Characteristic.Manufacturer, "Quantum Ultra Lock Technologies")
       .setCharacteristic(Characteristic.Model, "RaspberryPi GPIO Electromagnetic lock with door contact")
       .setCharacteristic(Characteristic.SerialNumber, "694475915589468")
-      .setCharacteristic(Characteristic.FirmwareRevision, "1.2.2");
+      .setCharacteristic(Characteristic.FirmwareRevision, "1.2.3");
   }
 
   setupBellService() {
     this.bellService.getCharacteristic(Characteristic.On)
     .on("set", this.setBellState.bind(this))
     .on('get', callback => {
-      this.log("Switch get state.");
       callback(undefined, false); 
     });
   }
@@ -125,8 +124,7 @@ class ElectromagneticLockAccessory {
       this.doorService.addCharacteristic(Characteristic.StatusTampered);
     }
     GPIO.read(this.doorPin, (err, value) => {
-      if (err) {
-        this.log(`Error reading GPIO Pin ${err}`);
+      if (err) {      
       } else {
         const state = value ? DOOR_DETECTED : DOOR_NOT_DETECTED;
         this.updateDoorState(state);
@@ -136,8 +134,7 @@ class ElectromagneticLockAccessory {
 
   handleTamperCheck() {
     GPIO.read(this.tamperCheck, (err, value) => {
-      if (err) {
-        this.log(`Error reading GPIO Pin ${err}`);
+      if (err) {       
       } else {
         const tamperDetected = value === 0;
         this.log(`Tamper state changed: ${tamperDetected ? "Tampered" : "Not Tampered"}`);
@@ -150,7 +147,6 @@ class ElectromagneticLockAccessory {
   handleDoorStateChange() {
     GPIO.read(this.doorPin, (err, value) => {
       if (err) {
-        this.log(`Error reading GPIO Pin ${err}`);
       } else {
         const state = value ? DOOR_DETECTED : DOOR_NOT_DETECTED;
 
