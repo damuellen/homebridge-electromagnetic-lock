@@ -97,7 +97,7 @@ class ElectromagneticLockAccessory {
       .setCharacteristic(Characteristic.Manufacturer, "Quantum Ultra Lock Technologies")
       .setCharacteristic(Characteristic.Model, "RaspberryPi GPIO Electromagnetic lock with door contact")
       .setCharacteristic(Characteristic.SerialNumber, "694475915589468")
-      .setCharacteristic(Characteristic.FirmwareRevision, "1.2.3");
+      .setCharacteristic(Characteristic.FirmwareRevision, "1.2.4");
   }
 
   setupBellService() {
@@ -150,12 +150,6 @@ class ElectromagneticLockAccessory {
       } else {
         const state = value ? DOOR_DETECTED : DOOR_NOT_DETECTED;
 
-        if (state == DOOR_DETECTED && this.currentState != LOCK_SECURED && this.targetState == LOCK_SECURED) {
-          clearInterval(this.unlockInterval);
-          this.currentState = LOCK_SECURED;
-          this.lockService.updateCharacteristic(Characteristic.LockCurrentState, this.currentState);
-        }
-
         if (state !== this.doorState) {        
           this.updateDoorState(state);
         }
@@ -183,16 +177,13 @@ class ElectromagneticLockAccessory {
   updateDoorState(newState) {
     const currentTime = Date.now();
     
-    if (newState == DOOR_DETECTED && this.currentState != LOCK_SECURED) {
-      if (currentTime - this.doorTimeout <= 1000) {
-        this.currentState = LOCK_JAMMED;
-      } else if (this.currentState == LOCK_JAMMED) {
-        this.currentState = LOCK_SECURED;
-      } else if (this.currentState == LOCK_UNKNOWN) {
-        this.currentState = LOCK_SECURED;
-      }
-      this.lockService.updateCharacteristic(Characteristic.LockCurrentState, this.currentState);
-    } 
+    if (this.currentState == LOCK_JAMMED) {
+      this.currentState = LOCK_SECURED;
+    } else if (this.currentState == LOCK_UNKNOWN) {
+      this.currentState = LOCK_SECURED;
+    }
+    this.lockService.updateCharacteristic(Characteristic.LockCurrentState, this.currentState);
+    
     this.doorState = newState;
     this.doorService.updateCharacteristic(Characteristic.ContactSensorState, newState);
     this.doorTimeout = currentTime;
