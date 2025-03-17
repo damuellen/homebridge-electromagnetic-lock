@@ -51,3 +51,7 @@ The accessory information, such as manufacturer, model, and version, is also pro
 ## Acknowledgments
 
 This plugin utilizes the [rpi-gpio](https://www.npmjs.com/package/rpi-gpio) package to interface with the Raspberry Pi GPIO.
+
+## Attribution
+
+This project is based on Homebridge GPIO Electromagnetic Lock by Panda Unit sp. z o.o. (https://github.com/pandaunit/homebridge-gpio-electromagnetic-lock).
